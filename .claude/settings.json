@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "Stop": [],
+    "PostToolUse": [],
+    "Notification": []
+  },
+  "permissions": {
+    "allow": [
+      "Read(*)",
+      "Write(./*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(pytest:*)",
+      "Bash(pip:*)",
+      "Bash(poetry:*)",
+      "Bash(git:*)"
+    ],
+    "deny": [
+      "Write(~/*)",
+      "Bash(rm -rf *)"
+    ]
+  },
+  "enabledPlugins": {}
+}

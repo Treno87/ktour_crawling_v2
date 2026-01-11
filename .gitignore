@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+*.dist-info/
+*.egg-info/
+
+# Virtual environment
+venv/
+.venv/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Credentials
+credentials.json
+.env
+
+# Logs
+*.log
+
+# Playwright
+browser/
+
+# Temp files
+nul
+downloaded_files/
