@@ -5,7 +5,23 @@ from config import (
     CREDENTIALS_FILE
 )
 import gspread
-from google.oauth2.service_account import Credentials
+import json
+import os
+
+
+def get_gspread_client():
+    """
+    Google Sheets API 클라이언트를 반환합니다.
+    환경변수 GOOGLE_CREDENTIALS_JSON이 있으면 해당 값을 사용하고,
+    없으면 credentials.json 파일을 사용합니다.
+    """
+    creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
+
+    if creds_json:
+        creds_dict = json.loads(creds_json)
+        return gspread.service_account_from_dict(creds_dict)
+    else:
+        return gspread.service_account(filename=CREDENTIALS_FILE)
 
 
 def save_to_sheet(data: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -24,7 +40,7 @@ def save_to_sheet(data: list[dict]) -> tuple[list[dict], list[dict]]:
         return [], []
 
     # 1. Google Sheets API 인증
-    gc = gspread.service_account(filename=CREDENTIALS_FILE)
+    gc = get_gspread_client()
 
     # 2. 스프레드시트 열기 (이미 존재해야 함)
     try:

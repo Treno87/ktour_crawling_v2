@@ -27,12 +27,6 @@ jobs:
           playwright install chromium
           playwright install-deps
 
-      - name: Create credentials.json
-        env:
-          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
-        run: |
-          printf '%s' "$GOOGLE_CREDENTIALS_JSON" > credentials.json
-
       - name: Create price.json
         env:
           PRICE_JSON: ${{ secrets.PRICE_JSON }}
@@ -49,10 +43,6 @@ jobs:
           GOOGLE_WORKSHEET_NAME: ${{ secrets.GOOGLE_WORKSHEET_NAME }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           GOOGLE_SHEETS_URL: ${{ secrets.GOOGLE_SHEETS_URL }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: |
           python main.py
-
-      - name: Cleanup credentials
-        if: always()
-        run: |
-          rm -f credentials.json
