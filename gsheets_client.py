@@ -131,9 +131,10 @@ def save_to_sheet(data: list[dict]) -> tuple[list[dict], list[dict]]:
         print("새로 추가할 데이터가 없습니다. (모두 중복)")
         return [], existing_data
 
-    # 8. 새 데이터 행 추가
+    # 8. 새 데이터 행 추가 (새 예약은 is_new = True로 설정)
     rows_to_add = []
     for reservation in new_data:
+        reservation['is_new'] = True  # 저장 전에 플래그 설정
         row = [
             reservation.get("날짜", ""),
             reservation.get("팀", ""),
@@ -156,9 +157,7 @@ def save_to_sheet(data: list[dict]) -> tuple[list[dict], list[dict]]:
     if len(data) - len(new_data) > 0:
         print(f"({len(data) - len(new_data)}개는 중복으로 제외됨)")
 
-    # 새 예약에 is_new 플래그 설정
-    for reservation in new_data:
-        reservation['is_new'] = True
+    # 기존 예약에 is_new 플래그 설정
     for reservation in existing_data:
         reservation['is_new'] = False
 
