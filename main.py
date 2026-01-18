@@ -16,6 +16,11 @@ from slack_notifier import SlackNotifier
 from config import TARGET_URL, LOGIN_ID, LOGIN_PASSWORD, GOOGLE_SHEETS_URL
 
 
+def format_date(year: int, month: int, day: int) -> str:
+    """날짜를 YYYY-MM-DD 형식으로 포맷"""
+    return f"{year}-{month:02d}-{day:02d}"
+
+
 def get_date_range_for_month() -> list[str]:
     """
     오늘부터 해당 월의 마지막 날까지의 날짜(일) 목록을 반환합니다.
@@ -38,7 +43,7 @@ def main():
     7. 브라우저 종료
     """
     today = datetime.now()
-    today_str = f"{today.year}-{today.month:02d}-{today.day:02d}"
+    today_str = format_date(today.year, today.month, today.day)
 
     print("=" * 50)
     print("Ktourstory 예약 정보 크롤링 시작")
@@ -67,7 +72,7 @@ def main():
         # 3. 각 날짜별 스크래핑
         print(f"\n[3/6] 날짜별 예약 조회 중... (총 {len(target_days)}일)")
         for idx, target_day in enumerate(target_days, 1):
-            reservation_date = f"{today.year}-{today.month:02d}-{int(target_day):02d}"
+            reservation_date = format_date(today.year, today.month, int(target_day))
             print(f"\n  [{idx}/{len(target_days)}] {reservation_date} 조회 중...")
 
             # 날짜 선택
@@ -124,7 +129,7 @@ def main():
             new_reservations=new_reservations,
             today_date=today_str,
             notify_everyone=bool(new_reservations),
-            sheet_url=GOOGLE_SHEETS_URL if GOOGLE_SHEETS_URL else None
+            sheet_url=GOOGLE_SHEETS_URL or None
         )
         slack.send_message(message)
 
