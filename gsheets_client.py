@@ -9,29 +9,39 @@ import json
 import os
 
 
+def fix_json_newlines(json_str):
+    """JSON 문자열 내부의 실제 줄바꿈을 \\n으로 변환"""
+    result = []
+    in_string = False
+    i = 0
+    while i < len(json_str):
+        char = json_str[i]
+
+        if char == '"' and (i == 0 or json_str[i-1] != '\\'):
+            in_string = not in_string
+            result.append(char)
+        elif in_string and char == '\n':
+            result.append('\\n')
+        elif in_string and char == '\r':
+            pass
+        else:
+            result.append(char)
+
+        i += 1
+
+    return ''.join(result)
+
+
 def get_gspread_client():
     """
     Google Sheets API 클라이언트를 반환합니다.
     환경변수 GOOGLE_CREDENTIALS_JSON이 있으면 해당 값을 사용하고,
     없으면 credentials.json 파일을 사용합니다.
     """
-    import re
-
     creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
 
     if creds_json:
-        # private_key 필드 내의 실제 줄바꿈을 \\n으로 변환
-        def fix_private_key(match):
-            key_value = match.group(1)
-            fixed = key_value.replace('\r', '').replace('\n', '\\n')
-            return f'"private_key": "{fixed}"'
-
-        creds_json = re.sub(
-            r'"private_key":\s*"(.*?)"',
-            fix_private_key,
-            creds_json,
-            flags=re.DOTALL
-        )
+        creds_json = fix_json_newlines(creds_json)
         creds_dict = json.loads(creds_json)
         return gspread.service_account_from_dict(creds_dict)
     else:
