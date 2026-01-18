@@ -33,6 +33,22 @@ jobs:
         run: |
           printf '%s' "$PRICE_JSON" > price.json
 
+      - name: Debug - Check environment variables
+        env:
+          GOOGLE_SHEET_TITLE: ${{ secrets.GOOGLE_SHEET_TITLE }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+        run: |
+          echo "=== Environment Variable Debug ==="
+          echo "GOOGLE_SHEET_TITLE length: ${#GOOGLE_SHEET_TITLE}"
+          echo "GOOGLE_SHEET_TITLE value: $GOOGLE_SHEET_TITLE"
+          echo "GOOGLE_CREDENTIALS_JSON length: ${#GOOGLE_CREDENTIALS_JSON}"
+          if [ -z "$GOOGLE_CREDENTIALS_JSON" ]; then
+            echo "ERROR: GOOGLE_CREDENTIALS_JSON is empty!"
+          else
+            echo "GOOGLE_CREDENTIALS_JSON is set (first 50 chars): ${GOOGLE_CREDENTIALS_JSON:0:50}..."
+          fi
+          echo "==================================="
+
       - name: Run crawler
         env:
           HEADLESS: "true"
