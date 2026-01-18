@@ -1,0 +1,54 @@
+name: Daily Reservation Crawler
+
+on:
+  schedule:
+    # KST 07:00 = UTC 22:00 (전날)
+    - cron: '0 22 * * *'
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps
+
+      - name: Create credentials.json
+        run: |
+          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" | base64 -d > credentials.json
+
+      - name: Create price.json
+        run: |
+          echo '${{ secrets.PRICE_JSON }}' > price.json
+
+      - name: Run crawler
+        env:
+          HEADLESS: "true"
+          LOGIN_ID: ${{ secrets.LOGIN_ID }}
+          LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
+          TARGET_URL: ${{ secrets.TARGET_URL }}
+          GOOGLE_SHEET_TITLE: ${{ secrets.GOOGLE_SHEET_TITLE }}
+          GOOGLE_WORKSHEET_NAME: ${{ secrets.GOOGLE_WORKSHEET_NAME }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          GOOGLE_SHEETS_URL: ${{ secrets.GOOGLE_SHEETS_URL }}
+        run: |
+          python main.py
+
+      - name: Cleanup credentials
+        if: always()
+        run: |
+          rm -f credentials.json
