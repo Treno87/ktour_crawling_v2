@@ -50,7 +50,7 @@ def main():
 
     # 1. 브라우저 실행
     print("\n[1/6] 브라우저 실행 중...")
-    page, browser, context = setup_browser()
+    page, browser, context, driver = setup_browser()
     print("[OK] 브라우저 실행 완료")
 
     all_scraped_data = []  # 전체 스크래핑 데이터
@@ -92,6 +92,11 @@ def main():
             scraped_data = scrape_details(page, reservation_date)
             all_scraped_data.extend(scraped_data)
             print(f"  [{idx}/{len(target_days)}] {reservation_date}: {len(scraped_data)}건 수집")
+
+            # 다음 날짜 조회를 위해 페이지 초기화
+            page.goto(TARGET_URL)
+            page.wait_for_load_state("networkidle")
+            page.wait_for_timeout(2000)
 
         print(f"\n[4/6] 전체 스크래핑 완료 (총 {len(all_scraped_data)}건)")
 
@@ -143,6 +148,7 @@ def main():
         try:
             context.close()
             browser.close()
+            driver.quit()
         except Exception:
             pass
         print("[OK] 브라우저 종료 완료")

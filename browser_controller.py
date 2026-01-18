@@ -10,13 +10,13 @@ import subprocess
 import re
 
 
-def setup_browser() -> tuple[Page, Browser, BrowserContext]:
+def setup_browser() -> tuple[Page, Browser, BrowserContext, "Driver"]:
     """
     SeleniumBase(uc=True)로 브라우저를 실행하고,
     Playwright가 해당 브라우저에 연결하여 제어합니다.
 
     Returns:
-        tuple[Page, Browser, BrowserContext]: Playwright Page, Browser, Context 객체
+        tuple[Page, Browser, BrowserContext, Driver]: Playwright Page, Browser, Context, SeleniumBase Driver 객체
     """
     # 1. SeleniumBase로 브라우저 실행 (uc=True로 봇 탐지 우회)
     driver = Driver(uc=True, headless=False)
@@ -58,4 +58,4 @@ def setup_browser() -> tuple[Page, Browser, BrowserContext]:
     context = browser.contexts[0] if browser.contexts else browser.new_context()
     page = context.pages[0] if context.pages else context.new_page()
 
-    return page, browser, context
+    return page, browser, context, driver
