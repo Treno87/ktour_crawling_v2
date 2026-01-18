@@ -180,7 +180,74 @@ class SlackNotifier:
 
     def _calculate_total_price(self, reservations: list[dict]) -> int:
         """전체 예약의 총 매출 계산"""
-        total = 0
-        for res in reservations:
-            total += self._parse_price(res.get('금액', '0'))
-        return total
+        return sum(self._parse_price(res.get('금액', '0')) for res in reservations)
+
+    def format_daily_summary_message(
+        self,
+        today_reservations: list[dict],
+        new_reservations: list[dict],
+        today_date: str,
+        notify_everyone: bool = False,
+        sheet_url: str = None
+    ) -> str:
+        """
+        당일 예약현황과 새로 추가된 예약을 구분하여 메시지 생성
+
+        Args:
+            today_reservations: 당일 예약 리스트
+            new_reservations: 새로 추가된 예약 리스트 (모든 날짜 포함)
+            today_date: 오늘 날짜 (예: "2026-01-18")
+            notify_everyone: @channel 알림 포함 여부
+            sheet_url: 구글 시트 URL (선택)
+
+        Returns:
+            str: 포맷팅된 메시지
+        """
+        message = []
+
+        # @channel 알림
+        if notify_everyone:
+            message.append("<!channel>")
+
+        # ===== 당일 예약현황 섹션 =====
+        message.append(f"📅 *[{today_date}] 당일 예약현황*")
+        message.append("━━━━━━━━━━━━━━━━━━")
+
+        if today_reservations:
+            idx = 1
+            for res in today_reservations:
+                self._append_reservation_block(
+                    message, res, idx, include_date=False, is_new_section=False
+                )
+                idx += 1
+
+            # 당일 매출
+            today_total = self._calculate_total_price(today_reservations)
+            message.append(f"💵 당일 예상 매출: *{today_total:,}원* ({len(today_reservations)}건)")
+        else:
+            message.append("예약이 없습니다.\n")
+
+        # ===== 새로 추가된 예약 섹션 =====
+        message.append("\n🆕 *[새로 추가된 예약]*")
+        message.append("━━━━━━━━━━━━━━━━━━")
+
+        if new_reservations:
+            idx = 1
+            for res in new_reservations:
+                self._append_reservation_block(
+                    message, res, idx, include_date=True, is_new_section=True
+                )
+                idx += 1
+
+            # 새 예약 매출
+            new_total = self._calculate_total_price(new_reservations)
+            message.append("━━━━━━━━━━━━━━━━━━")
+            message.append(f"💰 새 예약 매출: *{new_total:,}원* ({len(new_reservations)}건)")
+        else:
+            message.append("새로 추가된 예약이 없습니다.")
+
+        # 시트 바로가기
+        if sheet_url:
+            message.append(f"\n🔗 <{sheet_url}|시트 바로가기>")
+
+        return "\n".join(message)
