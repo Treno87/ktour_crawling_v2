@@ -4,7 +4,7 @@ Ktourstory 예약 정보 크롤링 시작
 검색 대상: 1월 18일 ~ 31일 (14일간)
 
 [1/6] 브라우저 실행 중...
-(node:5103) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(node:5170) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 [OK] 브라우저 실행 완료
 
@@ -71,24 +71,10 @@ main()
 File "/home/runner/work/ktour_crawling_v2/ktour_crawling_v2/main.py", line 111, in main
 new_reservations, existing_reservations = save_to_sheet(all_scraped_data)
 ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
-File "/home/runner/work/ktour_crawling_v2/ktour_crawling_v2/gsheets_client.py", line 27, in save_to_sheet
-gc = gspread.service_account(filename=CREDENTIALS_FILE)
-File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/site-packages/gspread/auth.py", line 329, in service_account
-creds = SACredentials.from_service_account_file(filename, scopes=scopes)
-File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/site-packages/google/oauth2/service_account.py", line 262, in from_service_account_file
-info, signer = \_service_account_info.from_filename(
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
-filename, require=["client_email", "token_uri"]
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-)
-^
-File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/site-packages/google/auth/\_service_account_info.py", line 79, in from_filename
-data = json.load(json_file)
-File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/json/**init**.py", line 298, in load
-return loads(fp.read(),
-cls=cls, object_hook=object_hook,
-parse_float=parse_float, parse_int=parse_int,
-parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, \*\*kw)
+File "/home/runner/work/ktour_crawling_v2/ktour_crawling_v2/gsheets_client.py", line 43, in save_to_sheet
+gc = get_gspread_client()
+File "/home/runner/work/ktour_crawling_v2/ktour_crawling_v2/gsheets_client.py", line 21, in get_gspread_client
+creds_dict = json.loads(creds_json)
 File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/json/**init**.py", line 352, in loads
 return \_default_decoder.decode(s)
 ~~~~~~~~~~~~~~~~~~~~~~~^^^
@@ -100,3 +86,56 @@ obj, end = self.scan_once(s, idx)
 ~~~~~~~~~~~~~~^^^^^^^^
 json.decoder.JSONDecodeError: Invalid control character at: line 5 column 69 (char 267)
 Error: Process completed with exit code 1.
+
+# github ai's solution
+
+The job failed due to a JSONDecodeError: "Invalid control character at: line 5 column 69 (char 267)" in your code when saving data to Google Sheets. This means some value being serialized to JSON contains illegal control characters (such as raw newlines, carriage returns, or other non-printable characters).
+
+**How to Fix:**
+
+1. **Sanitize Your JSON Input**
+   - Before dumping or loading data with `json`, make sure to clean or escape unwanted control characters from your data. Often, this is done by replacing or removing characters below ASCII 32 except whitespace.
+
+2. **Example Code Correction**
+   If your code uses something like:
+
+   ```python
+   import json
+   json.loads(data)
+   ```
+
+   or
+
+   ```python
+   json.dumps(data)
+   ```
+
+   clean your data as shown below:
+
+   ```python
+   import re
+
+   def sanitize_string(s):
+       # Remove control characters except for whitespace
+       return re.sub(r'[\x00-\x1f\x7f]', '', s)
+
+   sanitized_data = {k: sanitize_string(v) if isinstance(v, str) else v for k,v in data.items()}
+   json_str = json.dumps(sanitized_data)
+   ```
+
+3. **Where to Place This**
+   - Insert sanitization right before your code saves to Google Sheets or serializes to JSON.
+
+4. **Review Input Source**
+   - Check the data being scraped—one or more entries has a raw control character. Use the above technique to clean each string in your dataset before processing.
+
+**Direct Next Steps:**
+
+- Clean your data as shown.
+- Rerun the workflow to verify the fix.
+
+If you need the exact code location, please mention the file used for Google Sheets writing or pasting the related snippet, and I can assist you directly in updating it.
+
+**Related error line reference:**  
+You can see the full error in your workflow logs for commit [`9b74e59`](https://github.com/Treno87/ktour_crawling_v2/blob/9b74e59c1317f974c67fda5377a99be38d5172b8), specifically the stack trace points to standard library's `json/decoder.py`.  
+Focus your changes on the part of your project just before serializing to JSON.

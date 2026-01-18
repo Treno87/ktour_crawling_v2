@@ -15,9 +15,23 @@ def get_gspread_client():
     환경변수 GOOGLE_CREDENTIALS_JSON이 있으면 해당 값을 사용하고,
     없으면 credentials.json 파일을 사용합니다.
     """
+    import re
+
     creds_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
 
     if creds_json:
+        # private_key 필드 내의 실제 줄바꿈을 \\n으로 변환
+        def fix_private_key(match):
+            key_value = match.group(1)
+            fixed = key_value.replace('\r', '').replace('\n', '\\n')
+            return f'"private_key": "{fixed}"'
+
+        creds_json = re.sub(
+            r'"private_key":\s*"(.*?)"',
+            fix_private_key,
+            creds_json,
+            flags=re.DOTALL
+        )
         creds_dict = json.loads(creds_json)
         return gspread.service_account_from_dict(creds_dict)
     else:
