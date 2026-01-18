@@ -28,12 +28,16 @@ jobs:
           playwright install-deps
 
       - name: Create credentials.json
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
         run: |
-          echo '${{ secrets.GOOGLE_CREDENTIALS_JSON }}' > credentials.json
+          echo "$GOOGLE_CREDENTIALS_JSON" > credentials.json
 
       - name: Create price.json
+        env:
+          PRICE_JSON: ${{ secrets.PRICE_JSON }}
         run: |
-          echo '${{ secrets.PRICE_JSON }}' > price.json
+          echo "$PRICE_JSON" > price.json
 
       - name: Run crawler
         env:
