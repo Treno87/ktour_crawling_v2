@@ -1,6 +1,9 @@
 # main.py
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import calendar
+
+# 한국 시간대 (UTC+9)
+KST = timezone(timedelta(hours=9))
 from browser_controller import setup_browser
 from scraper import (
     login,
@@ -26,7 +29,7 @@ def get_date_range_for_month() -> list[str]:
     오늘부터 해당 월의 마지막 날까지의 날짜(일) 목록을 반환합니다.
     예: 1/18 실행 시 ["18", "19", ..., "31"] 반환
     """
-    today = datetime.now()
+    today = datetime.now(KST)
     last_day = calendar.monthrange(today.year, today.month)[1]
     return [str(day) for day in range(today.day, last_day + 1)]
 
@@ -42,7 +45,7 @@ def main():
     6. Slack 알림 (당일 예약현황 + 새로 추가된 예약 구분)
     7. 브라우저 종료
     """
-    today = datetime.now()
+    today = datetime.now(KST)
     today_str = format_date(today.year, today.month, today.day)
 
     print("=" * 50)
