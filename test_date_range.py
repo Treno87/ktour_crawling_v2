@@ -1,52 +1,46 @@
 """
-Tests for get_date_range_for_month: should return 1st to last day of month.
+Tests for get_date_range_for_month: should return today to last day of month.
+Past dates are skipped because no new reservations or cancellations occur.
 """
-from unittest.mock import patch
 from datetime import datetime, timezone, timedelta
+from main import get_date_range_for_month
 
 KST = timezone(timedelta(hours=9))
 
 
-def test_date_range_starts_from_day_1():
-    """get_date_range_for_month should always start from day 1, not today"""
-    with patch('main.datetime') as mock_dt:
-        mock_dt.now.return_value = datetime(2026, 2, 15, tzinfo=KST)
-        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
-
-        from main import get_date_range_for_month
-        # Force reimport to pick up patched datetime
-        import importlib
-        import main
-        importlib.reload(main)
-
-        result = main.get_date_range_for_month()
-        assert result[0] == "1", f"Expected '1' but got '{result[0]}'"
+def test_date_range_starts_from_today():
+    """get_date_range_for_month should start from today, not day 1"""
+    today = datetime(2026, 2, 15, tzinfo=KST)
+    result = get_date_range_for_month(today)
+    assert result[0] == "15"
 
 
 def test_date_range_ends_at_last_day():
     """get_date_range_for_month should end at the last day of the month"""
-    with patch('main.datetime') as mock_dt:
-        mock_dt.now.return_value = datetime(2026, 2, 15, tzinfo=KST)
-        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
-
-        import importlib
-        import main
-        importlib.reload(main)
-
-        result = main.get_date_range_for_month()
-        assert result[-1] == "28", f"Expected '28' but got '{result[-1]}'"
+    today = datetime(2026, 2, 15, tzinfo=KST)
+    result = get_date_range_for_month(today)
+    assert result[-1] == "28"
 
 
-def test_date_range_covers_full_month():
-    """get_date_range_for_month should return all days of the month"""
-    with patch('main.datetime') as mock_dt:
-        mock_dt.now.return_value = datetime(2026, 2, 15, tzinfo=KST)
-        mock_dt.side_effect = lambda *a, **kw: datetime(*a, **kw)
+def test_date_range_covers_today_to_end():
+    """get_date_range_for_month should return today through end of month"""
+    today = datetime(2026, 2, 15, tzinfo=KST)
+    result = get_date_range_for_month(today)
+    assert len(result) == 14
+    assert result == [str(d) for d in range(15, 29)]
 
-        import importlib
-        import main
-        importlib.reload(main)
 
-        result = main.get_date_range_for_month()
-        assert len(result) == 28
-        assert result == [str(d) for d in range(1, 29)]
+def test_date_range_on_first_day():
+    """On the 1st, should return all days of the month"""
+    today = datetime(2026, 2, 1, tzinfo=KST)
+    result = get_date_range_for_month(today)
+    assert len(result) == 28
+    assert result[0] == "1"
+    assert result[-1] == "28"
+
+
+def test_date_range_on_last_day():
+    """On the last day, should return only that day"""
+    today = datetime(2026, 2, 28, tzinfo=KST)
+    result = get_date_range_for_month(today)
+    assert result == ["28"]

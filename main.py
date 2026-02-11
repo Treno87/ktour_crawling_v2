@@ -25,14 +25,16 @@ def format_date(year: int, month: int, day: int) -> str:
     return f"{year}-{month:02d}-{day:02d}"
 
 
-def get_date_range_for_month() -> list[str]:
+def get_date_range_for_month(today=None) -> list[str]:
     """
-    실행 날짜가 포함된 월의 1일부터 말일까지의 날짜(일) 목록을 반환합니다.
-    예: 2/11 실행 시 ["1", "2", ..., "28"] 반환
+    오늘부터 해당 월의 마지막 날까지의 날짜(일) 목록을 반환합니다.
+    과거 날짜는 새 예약/취소가 발생하지 않으므로 스킵합니다.
+    예: 2/15 실행 시 ["15", "16", ..., "28"] 반환
     """
-    today = datetime.now(KST)
+    if today is None:
+        today = datetime.now(KST)
     last_day = calendar.monthrange(today.year, today.month)[1]
-    return [str(day) for day in range(1, last_day + 1)]
+    return [str(day) for day in range(today.day, last_day + 1)]
 
 
 def main():
@@ -85,7 +87,7 @@ def main():
             page.wait_for_timeout(2000)
 
             # 예약 내역 확인
-            if not has_reservations(page):
+            if not has_reservations(page, timeout=5000):
                 print(f"  [{idx}/{len(target_days)}] {reservation_date}: 예약 없음")
                 continue
 
