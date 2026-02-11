@@ -27,12 +27,12 @@ def format_date(year: int, month: int, day: int) -> str:
 
 def get_date_range_for_month() -> list[str]:
     """
-    오늘부터 해당 월의 마지막 날까지의 날짜(일) 목록을 반환합니다.
-    예: 1/18 실행 시 ["18", "19", ..., "31"] 반환
+    실행 날짜가 포함된 월의 1일부터 말일까지의 날짜(일) 목록을 반환합니다.
+    예: 2/11 실행 시 ["1", "2", ..., "28"] 반환
     """
     today = datetime.now(KST)
     last_day = calendar.monthrange(today.year, today.month)[1]
-    return [str(day) for day in range(today.day, last_day + 1)]
+    return [str(day) for day in range(1, last_day + 1)]
 
 
 def main():
