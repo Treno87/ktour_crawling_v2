@@ -48,20 +48,22 @@ def get_gspread_client():
         return gspread.service_account(filename=CREDENTIALS_FILE)
 
 
-def save_to_sheet(data: list[dict]) -> tuple[list[dict], list[dict]]:
+def save_to_sheet(data: list[dict], crawled_dates: list[str] | None = None) -> tuple[list[dict], list[dict], list[dict]]:
     """
     스크랩된 데이터를 구글 시트에 저장합니다.
-    중복 확인 후 새로운 데이터만 추가합니다.
+    중복 확인 후 새로운 데이터만 추가하고, 취소된 예약을 감지합니다.
 
     Args:
         data: 저장할 예약 정보 딕셔너리 리스트
+        crawled_dates: 크롤링한 날짜 리스트 (예: ["2026-02-01", ...])
+                       None이면 취소 감지를 수행하지 않음
 
     Returns:
-        tuple: (새로 추가된 예약 리스트, 기존 예약 리스트)
+        tuple: (새로 추가된 예약 리스트, 기존 예약 리스트, 취소된 예약 리스트)
     """
-    if not data:
+    if not data and not crawled_dates:
         print("저장할 데이터가 없습니다.")
-        return [], []
+        return [], [], []
 
     # 1. Google Sheets API 인증
     gc = get_gspread_client()
@@ -124,11 +126,19 @@ def save_to_sheet(data: list[dict]) -> tuple[list[dict], list[dict]]:
         if reservation.get("예약번호", "") in existing_reservation_nos
     ]
 
+    # 8. 취소 예약 감지
+    cancelled_data = []
+    if crawled_dates:
+        cancelled_data = _detect_cancellations(
+            worksheet, all_values, crawled_dates,
+            {r.get("예약번호", "") for r in data}
+        )
+
     if not new_data:
         print("새로 추가할 데이터가 없습니다. (모두 중복)")
-        return [], existing_data
+        return [], existing_data, cancelled_data
 
-    # 8. 새 데이터 행 추가 (새 예약은 is_new = True로 설정)
+    # 9. 새 데이터 행 추가 (새 예약은 is_new = True로 설정)
     rows_to_add = []
     for reservation in new_data:
         reservation['is_new'] = True  # 저장 전에 플래그 설정
@@ -158,4 +168,66 @@ def save_to_sheet(data: list[dict]) -> tuple[list[dict], list[dict]]:
     for reservation in existing_data:
         reservation['is_new'] = False
 
-    return new_data, existing_data
+    return new_data, existing_data, cancelled_data
+
+
+def _detect_cancellations(worksheet, all_values, crawled_dates, crawled_reservation_nos):
+    """
+    크롤링 날짜 범위 내에서 시트에는 있지만 크롤링 결과에 없는 예약을 취소 처리합니다.
+
+    Returns:
+        list[dict]: 취소된 예약 정보 리스트
+    """
+    if len(all_values) <= 1:
+        return []
+
+    date_idx = RESERVATION_DATA_HEADERS.index("날짜")
+    reservation_no_idx = RESERVATION_DATA_HEADERS.index("예약번호")
+    status_idx = RESERVATION_DATA_HEADERS.index("상태")
+    price_idx = RESERVATION_DATA_HEADERS.index("금액")
+
+    crawled_dates_set = set(crawled_dates)
+    cancelled = []
+
+    for row_idx, row in enumerate(all_values[1:], start=2):  # 1-based, skip header
+        if len(row) <= reservation_no_idx:
+            continue
+
+        row_date = row[date_idx] if len(row) > date_idx else ""
+        row_reservation_no = row[reservation_no_idx]
+        row_status = row[status_idx] if len(row) > status_idx else ""
+
+        # Skip if not in crawled date range
+        if row_date not in crawled_dates_set:
+            continue
+
+        # Skip if already cancelled
+        if row_status == "취소":
+            continue
+
+        # Skip if reservation exists in crawled data
+        if row_reservation_no in crawled_reservation_nos:
+            continue
+
+        # Mark as cancelled
+        worksheet.update_cell(row_idx, status_idx + 1, "취소")
+        worksheet.update_cell(row_idx, price_idx + 1, 0)
+
+        # Apply strikethrough + red background formatting
+        row_range = f"A{row_idx}:{chr(64 + len(RESERVATION_DATA_HEADERS))}{row_idx}"
+        worksheet.format(row_range, {
+            "textFormat": {"strikethrough": True},
+            "backgroundColor": {"red": 1, "green": 0.8, "blue": 0.8}
+        })
+
+        cancelled.append({
+            "예약번호": row_reservation_no,
+            "날짜": row_date,
+            "고객명": row[RESERVATION_DATA_HEADERS.index("고객명")] if len(row) > RESERVATION_DATA_HEADERS.index("고객명") else "",
+        })
+        print(f"[취소 감지] {row_reservation_no} ({row_date})")
+
+    if cancelled:
+        print(f"총 {len(cancelled)}건 취소 처리 완료")
+
+    return cancelled

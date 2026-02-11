@@ -111,11 +111,14 @@ def main():
 
         print(f"\n[4/4] 전체 스크래핑 완료 (총 {len(all_scraped_data)}건)")
 
-        # 4. Google Sheets에 저장
-        if all_scraped_data:
+        # 4. Google Sheets에 저장 + 취소 감지
+        crawled_dates = [format_date(TARGET_YEAR, TARGET_MONTH, d) for d in TARGET_DAYS]
+        if all_scraped_data or crawled_dates:
             print("\nGoogle Sheets에 데이터 저장 중...")
-            new_reservations, existing_reservations = save_to_sheet(all_scraped_data)
-            print(f"새로 추가: {len(new_reservations)}건, 기존(중복): {len(existing_reservations)}건")
+            new_reservations, existing_reservations, cancelled_reservations = save_to_sheet(
+                all_scraped_data, crawled_dates=crawled_dates
+            )
+            print(f"새로 추가: {len(new_reservations)}건, 기존(중복): {len(existing_reservations)}건, 취소: {len(cancelled_reservations)}건")
         else:
             print("\n저장할 데이터가 없습니다.")
 

@@ -114,12 +114,12 @@ def main():
 
         print(f"\n[4/6] 전체 스크래핑 완료 (총 {len(all_scraped_data)}건)")
 
-        # 4. 데이터 저장
+        # 4. 데이터 저장 + 취소 감지
         print("\n[5/6] Google Sheets에 데이터 저장 중...")
-        if all_scraped_data:
-            new_reservations, existing_reservations = save_to_sheet(all_scraped_data)
-        else:
-            new_reservations, existing_reservations = [], []
+        crawled_dates = [format_date(today.year, today.month, int(d)) for d in target_days]
+        new_reservations, existing_reservations, cancelled_reservations = save_to_sheet(
+            all_scraped_data, crawled_dates=crawled_dates
+        )
         print("[OK] 데이터 저장 완료")
 
         # 5. Slack 알림 전송
@@ -137,15 +137,22 @@ def main():
             today_reservations=today_reservations,
             new_reservations=new_reservations,
             today_date=today_str,
-            notify_everyone=bool(new_reservations),
+            notify_everyone=bool(new_reservations or cancelled_reservations),
             sheet_url=GOOGLE_SHEETS_URL or None
         )
+        if cancelled_reservations:
+            cancel_lines = [f"\n❌ *[취소 감지: {len(cancelled_reservations)}건]*"]
+            cancel_lines.append("━━━━━━━━━━━━━━━━━━")
+            for c in cancelled_reservations:
+                cancel_lines.append(f"• {c['예약번호']} ({c['날짜']}) - {c['고객명']}")
+            message += "\n" + "\n".join(cancel_lines)
         slack.send_message(message)
 
         print("\n" + "=" * 50)
         print("모든 작업 완료!")
         print(f"  - 당일({today_str}) 예약: {len(today_reservations)}건")
         print(f"  - 새로 추가된 예약: {len(new_reservations)}건")
+        print(f"  - 취소 감지: {len(cancelled_reservations)}건")
         print("=" * 50)
 
     except Exception as e:

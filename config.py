@@ -36,7 +36,8 @@ RESERVATION_DATA_HEADERS = [
     "예약상품",
     "예약시간",
     "금액",
-    "is_new"
+    "is_new",
+    "상태"
 ]
 
 # 가격 데이터 파일 경로
