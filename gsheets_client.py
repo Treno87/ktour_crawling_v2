@@ -90,18 +90,15 @@ def save_to_sheet(data: list[dict]) -> tuple[list[dict], list[dict]]:
     # 4. 기존 데이터 가져오기
     all_values = worksheet.get_all_values()
 
-    # 5. 헤더 확인 및 작성
-    header_count = len(RESERVATION_DATA_HEADERS)
-    first_row = all_values[0][:header_count] if all_values else []
-
+    # 5. 헤더 확인 및 작성 (첫 행이 헤더인 경우에만 스킵)
     if not all_values:
         worksheet.append_row(RESERVATION_DATA_HEADERS)
         print("헤더 작성 완료.")
         all_values = [RESERVATION_DATA_HEADERS]
-    elif first_row != RESERVATION_DATA_HEADERS:
-        worksheet.insert_row(RESERVATION_DATA_HEADERS, 1)
-        print("헤더 삽입 완료.")
-        all_values = [RESERVATION_DATA_HEADERS] + all_values
+    elif all_values[0][:len(RESERVATION_DATA_HEADERS)] != RESERVATION_DATA_HEADERS:
+        worksheet.update(values=[RESERVATION_DATA_HEADERS], range_name='A1')
+        print("헤더 덮어쓰기 완료.")
+        all_values[0] = RESERVATION_DATA_HEADERS
 
     # 6. 기존 예약번호 목록 추출 (중복 확인용)
     existing_reservation_nos = set()

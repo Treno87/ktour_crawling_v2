@@ -1,8 +1,9 @@
 import pytest
-from gsheets_client import save_to_sheet
-from config import GOOGLE_SHEET_TITLE, GOOGLE_WORKSHEET_NAME, RESERVATION_DATA_HEADERS
+from gsheets_client import save_to_sheet, get_gspread_client
+from config import GOOGLE_SHEET_TITLE, GOOGLE_WORKSHEET_NAME, RESERVATION_DATA_HEADERS, CREDENTIALS_FILE
 import gspread
 from datetime import datetime
+import uuid
 
 import os
 
@@ -13,13 +14,13 @@ def gsheet_client():
     gspread 클라이언트를 설정하고 테스트 후 정리합니다.
     (테스트용 시트 생성 및 공유, 실제 시트에는 영향을 주지 않음)
     """
-    
-    # credentials.json이 존재하고 유효한지 확인합니다.
-    if not os.path.exists('credentials.json'):
-        pytest.fail("credentials.json 파일이 프로젝트 루트에 없습니다. README.md를 참조하세요.")
+
+    # credentials 파일이 존재하는지 확인합니다.
+    if not os.path.exists(CREDENTIALS_FILE):
+        pytest.fail(f"인증 파일이 없습니다: {CREDENTIALS_FILE}")
 
     try:
-        gc = gspread.service_account(filename='credentials.json')
+        gc = get_gspread_client()
         
         # 시트를 찾고 없으면 생성합니다.
         try:
@@ -54,13 +55,14 @@ def test_save_to_sheet(gsheet_client):
     """
     스크랩된 데이터를 구글 시트에 저장하는 기능을 테스트합니다.
     """
-    # 1. 테스트용 모의 데이터 생성 (RESERVATION_DATA_HEADERS 키와 일치)
+    # 1. 테스트용 모의 데이터 생성 (매번 고유한 예약번호 사용)
+    unique_id = uuid.uuid4().hex[:8]
     mock_data = [
         {
             "날짜": "2026-01-14",
             "팀": "TEAM A",
             "고객명": "Test User 1",
-            "예약번호": "TEST001",
+            "예약번호": f"TEST-{unique_id}-001",
             "채널": "L",
             "인원구분": "Adult 1",
             "국가": "KOREA",
@@ -73,7 +75,7 @@ def test_save_to_sheet(gsheet_client):
             "날짜": "2026-01-14",
             "팀": "TEAM A",
             "고객명": "Test User 2",
-            "예약번호": "TEST002",
+            "예약번호": f"TEST-{unique_id}-002",
             "채널": "VI",
             "인원구분": "Adult 2",
             "국가": "USA",
@@ -89,5 +91,5 @@ def test_save_to_sheet(gsheet_client):
 
     # 3. 새 예약으로 추가되었는지 확인
     assert len(new_reservations) == 2
-    assert new_reservations[0]["예약번호"] == "TEST001"
-    assert new_reservations[1]["예약번호"] == "TEST002"
+    assert new_reservations[0]["예약번호"] == f"TEST-{unique_id}-001"
+    assert new_reservations[1]["예약번호"] == f"TEST-{unique_id}-002"
