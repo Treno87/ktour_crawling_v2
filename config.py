@@ -22,7 +22,7 @@ GOOGLE_SHEET_TITLE = os.getenv("GOOGLE_SHEET_TITLE", "케이투어_관광객예�
 GOOGLE_WORKSHEET_NAME = os.getenv("GOOGLE_WORKSHEET_NAME", "crawlingDB")
 
 # Google Sheets 인증 파일 경로
-CREDENTIALS_FILE = str(Path(__file__).parent / "credentials.json")
+CREDENTIALS_FILE = str(Path(__file__).parent / "zippy-carving-456209-k6-4c5ec7e32306.json")
 
 # 예약 데이터 헤더 (구글 시트 컬럼명 - 기존 시트와 동일)
 RESERVATION_DATA_HEADERS = [
@@ -47,3 +47,11 @@ SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL", "")
 
 # Google Sheets URL (시트 바로가기용)
 GOOGLE_SHEETS_URL = os.getenv("GOOGLE_SHEETS_URL", "")
+
+
+def validate_config():
+    """필수 환경변수가 설정되어 있는지 검증합니다."""
+    required = ["LOGIN_ID", "LOGIN_PASSWORD"]
+    missing = [name for name in required if not os.getenv(name)]
+    if missing:
+        raise ValueError(f"Missing required config: {', '.join(missing)}")

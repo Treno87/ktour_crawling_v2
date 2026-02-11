@@ -12,6 +12,7 @@ from scraper import (
     has_reservations,
     click_reservation_text,
     click_team_button,
+    get_team_count,
     scrape_details
 )
 from gsheets_client import save_to_sheet
@@ -93,13 +94,21 @@ def main():
             # 예약 상세 조회
             click_reservation_text(page)
             page.wait_for_timeout(2000)
-            click_team_button(page)
-            page.wait_for_timeout(2000)
 
-            # 데이터 스크래핑
-            scraped_data = scrape_details(page, reservation_date)
+            # 모든 팀 순회
+            team_count = get_team_count(page)
+            scraped_data = []
+            for team_idx in range(team_count):
+                click_team_button(page, team_idx)
+                page.wait_for_timeout(2000)
+                team_data = scrape_details(page, reservation_date, team_idx)
+                scraped_data.extend(team_data)
+                # 다음 팀 조회를 위해 현재 팀 접기
+                click_team_button(page, team_idx)
+                page.wait_for_timeout(1000)
+
             all_scraped_data.extend(scraped_data)
-            print(f"  [{idx}/{len(target_days)}] {reservation_date}: {len(scraped_data)}건 수집")
+            print(f"  [{idx}/{len(target_days)}] {reservation_date}: {len(scraped_data)}건 수집 ({team_count}팀)")
 
             # 다음 날짜 조회를 위해 페이지 초기화
             page.goto(TARGET_URL)

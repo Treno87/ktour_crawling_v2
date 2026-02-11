@@ -4,7 +4,7 @@ Ktourstory 예약 정보 크롤링 시작
 검색 대상: 1월 18일 ~ 31일 (14일간)
 
 [1/6] 브라우저 실행 중...
-(node:5101) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(node:5139) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 [OK] 브라우저 실행 완료
 
@@ -59,7 +59,7 @@ Ktourstory 예약 정보 크롤링 시작
 
 [5/6] Google Sheets에 데이터 저장 중...
 
-Error: 오류 발생: Invalid control character at: line 13 column 69 (char 2456)
+Error: 오류 발생: No key could be detected.
 [OK] 슬랙 알림 전송 성공
 
 브라우저 종료 중...
@@ -71,18 +71,31 @@ main()
 File "/home/runner/work/ktour_crawling_v2/ktour_crawling_v2/main.py", line 111, in main
 new_reservations, existing_reservations = save_to_sheet(all_scraped_data)
 ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
-File "/home/runner/work/ktour_crawling_v2/ktour_crawling_v2/gsheets_client.py", line 57, in save_to_sheet
+File "/home/runner/work/ktour_crawling_v2/ktour_crawling_v2/gsheets_client.py", line 67, in save_to_sheet
 gc = get_gspread_client()
-File "/home/runner/work/ktour_crawling_v2/ktour_crawling_v2/gsheets_client.py", line 35, in get_gspread_client
-creds_dict = json.loads(creds_json)
-File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/json/**init**.py", line 352, in loads
-return \_default_decoder.decode(s)
-~~~~~~~~~~~~~~~~~~~~~~~^^^
-File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/json/decoder.py", line 345, in decode
-obj, end = self.raw_decode(s, idx=\_w(s, 0).end())
-~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
-File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/json/decoder.py", line 361, in raw_decode
-obj, end = self.scan_once(s, idx)
-~~~~~~~~~~~~~~^^^^^^^^
-json.decoder.JSONDecodeError: Invalid control character at: line 13 column 69 (char 2456)
+File "/home/runner/work/ktour_crawling_v2/ktour_crawling_v2/gsheets_client.py", line 46, in get_gspread_client
+return gspread.service_account_from_dict(creds_dict)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/site-packages/gspread/auth.py", line 362, in service_account_from_dict
+creds = SACredentials.from_service_account_info(
+info=info,
+scopes=scopes,
+)
+File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/site-packages/google/oauth2/service_account.py", line 245, in from_service_account_info
+signer = \_service_account_info.from_dict(
+info, require=["client_email", "token_uri"]
+)
+File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/site-packages/google/auth/\_service_account_info.py", line 57, in from_dict
+signer = crypt.RSASigner.from_service_account_info(data)
+File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/site-packages/google/auth/crypt/base.py", line 109, in from_service_account_info
+return cls.from_string(
+~~~~~~~~~~~~~~~^
+info[_JSON_FILE_PRIVATE_KEY], info.get(\_JSON_FILE_PRIVATE_KEY_ID)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+)
+
+^
+File "/opt/hostedtoolcache/Python/3.13.11/x64/lib/python3.13/site-packages/google/auth/crypt/\_python_rsa.py", line 173, in from_string
+raise exceptions.MalformedError("No key could be detected.")
+google.auth.exceptions.MalformedError: No key could be detected.
 Error: Process completed with exit code 1.

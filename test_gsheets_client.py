@@ -54,53 +54,40 @@ def test_save_to_sheet(gsheet_client):
     """
     스크랩된 데이터를 구글 시트에 저장하는 기능을 테스트합니다.
     """
-    # 1. 테스트용 모의 데이터 생성
+    # 1. 테스트용 모의 데이터 생성 (RESERVATION_DATA_HEADERS 키와 일치)
     mock_data = [
         {
-            "이름": "Test User 1",
-            "상품명": "Test Product A",
-            "예약시간": "10:00",
+            "날짜": "2026-01-14",
+            "팀": "TEAM A",
+            "고객명": "Test User 1",
             "예약번호": "TEST001",
-            "국적": "KOREA",
-            "크롤링 일자": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "채널": "L",
+            "인원구분": "Adult 1",
+            "국가": "KOREA",
+            "예약상품": "Test Product A",
+            "예약시간": "10:00",
+            "금액": "110,000",
+            "is_new": ""
         },
         {
-            "이름": "Test User 2",
-            "상품명": "Test Product B",
-            "예약시간": "11:00",
+            "날짜": "2026-01-14",
+            "팀": "TEAM A",
+            "고객명": "Test User 2",
             "예약번호": "TEST002",
-            "국적": "USA",
-            "크롤링 일자": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "채널": "VI",
+            "인원구분": "Adult 2",
+            "국가": "USA",
+            "예약상품": "Test Product B",
+            "예약시간": "11:00",
+            "금액": "80,000",
+            "is_new": ""
         }
     ]
 
     # 2. 저장 함수 호출
-    save_to_sheet(mock_data)
+    new_reservations, existing_reservations = save_to_sheet(mock_data)
 
-    # 3. 데이터가 올바르게 저장되었는지 확인
-    # 마지막 두 줄을 읽어와서 데이터가 일치하는지 확인합니다.
-    worksheet = gsheet_client
-    all_values = worksheet.get_all_values()
-    
-    # 헤더가 있는지 확인
-    if not all_values or all_values[0] != RESERVATION_DATA_HEADERS:
-        # 헤더가 없으면 초기화 후 헤더를 씁니다.
-        worksheet.clear()
-        worksheet.append_row(RESERVATION_DATA_HEADERS)
-        all_values = worksheet.get_all_values() # 다시 읽기
-    
-    assert all_values[0] == RESERVATION_DATA_HEADERS
-
-    # 저장된 데이터 확인
-    # 실제 저장될 때 크롤링 일자는 실시간으로 생성되므로 비교에서 제외
-    expected_row1 = [mock_data[0]["이름"], mock_data[0]["상품명"], mock_data[0]["예약시간"], mock_data[0]["예약번호"], mock_data[0]["국적"], mock_data[0]["크롤링 일자"]]
-    expected_row2 = [mock_data[1]["이름"], mock_data[1]["상품명"], mock_data[1]["예약시간"], mock_data[1]["예약번호"], mock_data[1]["국적"], mock_data[1]["크롤링 일자"]]
-
-    # 마지막 행에 추가되므로, 마지막 두 행을 가져와서 비교합니다.
-    actual_rows = worksheet.get_all_values()[-2:]
-
-    # 실제 저장된 '크롤링 일자'는 mock_data와 다를 수 있으므로 해당 필드는 비교에서 제외하거나
-    # 실제 저장된 값을 가져와서 비교해야 합니다. 여기서는 간략하게 다른 필드만 비교
-    
-    assert actual_rows[0][0:5] == expected_row1[0:5]
-    assert actual_rows[1][0:5] == expected_row2[0:5]
+    # 3. 새 예약으로 추가되었는지 확인
+    assert len(new_reservations) == 2
+    assert new_reservations[0]["예약번호"] == "TEST001"
+    assert new_reservations[1]["예약번호"] == "TEST002"

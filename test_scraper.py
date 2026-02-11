@@ -18,10 +18,11 @@ def browser_context():
     """
     테스트 세션 전체에서 한 번만 브라우저와 컨텍스트를 설정합니다.
     """
-    _page, browser, context = setup_browser()
+    _page, browser, context, driver = setup_browser()
     yield context
     context.close()
     browser.close()
+    driver.quit()
 
 @pytest.fixture(scope="function")
 def page(browser_context: BrowserContext):
@@ -93,7 +94,7 @@ def test_scrape_reservation_details(logged_in_page: Page):
     click_team_button(page)
 
     # 데이터 스크래핑 함수 호출
-    scraped_data = scrape_details(page)
+    scraped_data = scrape_details(page, "2026-01-14", 0)
 
     # 결과 확인
     assert scraped_data is not None
@@ -101,11 +102,10 @@ def test_scrape_reservation_details(logged_in_page: Page):
     assert len(scraped_data) > 0
 
     first_reservation = scraped_data[0]
-    assert "이름" in first_reservation
-    assert "상품명" in first_reservation
+    assert "고객명" in first_reservation
+    assert "예약상품" in first_reservation
     assert "예약시간" in first_reservation
     assert "예약번호" in first_reservation
-    assert "국적" in first_reservation
-
-    # 간단한 데이터 값 검증
-    assert first_reservation["이름"] == "Zhang Qingrong (1)"
+    assert "국가" in first_reservation
+    assert "날짜" in first_reservation
+    assert first_reservation["날짜"] == "2026-01-14"

@@ -83,15 +83,27 @@ def click_reservation_text(page: Page):
     retry_action(action)
 
 
-def click_team_button(page: Page):
+def get_team_count(page: Page) -> int:
     """
-    첫 번째 팀의 펼치기 버튼을 클릭합니다.
+    페이지에 표시된 팀 버튼의 개수를 반환합니다.
+    """
+    team_expand_selector = '//ul/li[contains(@class, "MuiListSubheader-root")]//button[contains(@class, "MuiIconButton-root")]'
+    try:
+        page.locator(team_expand_selector).first.wait_for(state="visible", timeout=10000)
+        return page.locator(team_expand_selector).count()
+    except Exception:
+        return 0
+
+
+def click_team_button(page: Page, index: int = 0):
+    """
+    지정된 인덱스의 팀 펼치기 버튼을 클릭합니다.
     """
     team_expand_selector = '//ul/li[contains(@class, "MuiListSubheader-root")]//button[contains(@class, "MuiIconButton-root")]'
 
     def action():
-        page.locator(team_expand_selector).first.wait_for(state="visible", timeout=10000)
-        page.locator(team_expand_selector).first.click()
+        page.locator(team_expand_selector).nth(index).wait_for(state="visible", timeout=10000)
+        page.locator(team_expand_selector).nth(index).click()
 
     retry_action(action)
 
@@ -117,30 +129,31 @@ def login(page: Page, email: str, password: str):
     page.locator(user_menu_button_selector).wait_for(state="visible", timeout=15000)
 
 
-def get_team_name(page: Page) -> str:
+def get_team_name(page: Page, index: int = 0) -> str:
     """
-    현재 열린 팀의 이름을 가져옵니다.
+    지정된 인덱스의 팀 이름을 가져옵니다.
     """
     team_header_selector = "li.MuiListSubheader-root"
     try:
-        return page.locator(team_header_selector).first.inner_text(timeout=5000)
+        return page.locator(team_header_selector).nth(index).inner_text(timeout=5000)
     except Exception:
         return ""
 
 
-def scrape_details(page: Page, reservation_date: str) -> list[dict]:
+def scrape_details(page: Page, reservation_date: str, team_index: int = 0) -> list[dict]:
     """
     예약 상세 정보 페이지에서 모든 예약 내역을 스크래핑하여 딕셔너리 리스트로 반환합니다.
 
     Args:
         page: Playwright Page 객체
         reservation_date: 예약 날짜 (예: "2026-01-14")
+        team_index: 팀 인덱스 (0부터 시작)
     """
     details_container_selector = "li.css-jywvn2"
     page.wait_for_selector(details_container_selector, state="visible", timeout=10000)
 
     # 팀 이름 가져오기
-    team_name = get_team_name(page)
+    team_name = get_team_name(page, team_index)
 
     # 가격 데이터 로드
     price_data = load_price_data()
@@ -240,6 +253,8 @@ def calculate_price(product_name: str, price_data: dict) -> str:
     clean_name = clean_name.strip()
 
     # 가격 찾기
+    if clean_name not in price_data and "DEFAULT" not in price_data:
+        print(f"[WARNING] 가격 미등록 상품: {clean_name}")
     unit_price = price_data.get(clean_name, price_data.get("DEFAULT", 0))
     total_price = unit_price * quantity
 
