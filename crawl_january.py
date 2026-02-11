@@ -16,8 +16,8 @@ from gsheets_client import save_to_sheet
 from config import TARGET_URL, LOGIN_ID, LOGIN_PASSWORD
 
 TARGET_YEAR = 2026
-TARGET_MONTH = 1
-TARGET_DAYS = list(range(1, 32))  # 1월 1일 ~ 31일
+TARGET_MONTH = 2
+TARGET_DAYS = list(range(1, 29))  # 2월 1일 ~ 28일
 
 
 def format_date(year: int, month: int, day: int) -> str:
@@ -44,7 +44,7 @@ def navigate_calendar_to_month(page, target_month_label: str):
 
 def click_calendar_date_january(page, day: str):
     """달력에서 1월의 특정 날짜를 클릭하고 OK 버튼을 누릅니다."""
-    navigate_calendar_to_month(page, "January 2026")
+    navigate_calendar_to_month(page, "February 2026")
 
     date_selector = page.locator(f"button.MuiPickersDay-root:text-is('{day}')")
     date_selector.wait_for(state="visible", timeout=10000)
@@ -57,7 +57,7 @@ def click_calendar_date_january(page, day: str):
 
 def main():
     print("=" * 50)
-    print("Ktourstory 예약 정보 크롤링 (1월 1일 ~ 31일)")
+    print("Ktourstory 예약 정보 크롤링 (2월 1일 ~ 28일)")
     print("=" * 50)
 
     # 1. Playwright 자체 Chromium으로 브라우저 실행
@@ -80,7 +80,7 @@ def main():
         print("[OK] 로그인 완료")
 
         # 3. 날짜별 스크래핑
-        print(f"\n[3/4] 1월 날짜별 예약 조회 중... (총 {len(TARGET_DAYS)}일)")
+        print(f"\n[3/4] {TARGET_MONTH}월 날짜별 예약 조회 중... (총 {len(TARGET_DAYS)}일)")
         for idx, day in enumerate(TARGET_DAYS, 1):
             reservation_date = format_date(TARGET_YEAR, TARGET_MONTH, day)
             print(f"\n  [{idx}/{len(TARGET_DAYS)}] {reservation_date} 조회 중...")
@@ -88,7 +88,6 @@ def main():
             click_date_button(page)
             page.wait_for_timeout(500)
             click_calendar_date_january(page, str(day))
-            page.wait_for_load_state("networkidle")
             page.wait_for_timeout(500)
 
             if not has_reservations(page, timeout=3000):
@@ -122,7 +121,7 @@ def main():
             print("\n저장할 데이터가 없습니다.")
 
         print("\n" + "=" * 50)
-        print("1월 크롤링 완료!")
+        print(f"{TARGET_MONTH}월 크롤링 완료!")
         print(f"총 {len(all_scraped_data)}건 수집")
         print("=" * 50)
 

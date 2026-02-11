@@ -142,13 +142,13 @@ def save_to_sheet(data: list[dict]) -> tuple[list[dict], list[dict]]:
             reservation.get("국가", ""),
             reservation.get("예약상품", ""),
             reservation.get("예약시간", ""),
-            reservation.get("금액", ""),
+            reservation.get("금액", "").replace(",", ""),
             reservation.get("is_new", "")
         ]
         rows_to_add.append(row)
 
-    # 배치로 추가 (효율성)
-    worksheet.append_rows(rows_to_add)
+    # 배치로 추가 (USER_ENTERED로 날짜가 날짜 타입으로 저장됨)
+    worksheet.append_rows(rows_to_add, value_input_option='USER_ENTERED')
 
     print(f"{len(new_data)}개의 새 예약 정보를 구글 시트에 저장했습니다.")
     if len(data) - len(new_data) > 0:
