@@ -75,7 +75,6 @@ def main():
         print("\n[2/4] 로그인 중...")
         page.goto(TARGET_URL)
         login(page, LOGIN_ID, LOGIN_PASSWORD)
-        page.wait_for_load_state("networkidle")
         page.wait_for_timeout(1000)
         print("[OK] 로그인 완료")
 

@@ -69,7 +69,6 @@ def main():
         print("\n[2/6] 로그인 중...")
         page.goto(TARGET_URL)
         login(page, LOGIN_ID, LOGIN_PASSWORD)
-        page.wait_for_load_state("networkidle")
         page.wait_for_timeout(3000)
         print("[OK] 로그인 완료")
 
@@ -83,7 +82,6 @@ def main():
             click_date_button(page)
             page.wait_for_timeout(1000)
             click_calendar_date(page, target_day)
-            page.wait_for_load_state("networkidle")
             page.wait_for_timeout(2000)
 
             # 예약 내역 확인
@@ -112,7 +110,6 @@ def main():
 
             # 다음 날짜 조회를 위해 페이지 초기화
             page.goto(TARGET_URL)
-            page.wait_for_load_state("networkidle")
             page.wait_for_timeout(2000)
 
         print(f"\n[4/6] 전체 스크래핑 완료 (총 {len(all_scraped_data)}건)")
