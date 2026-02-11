@@ -76,7 +76,7 @@ def main():
         page.goto(TARGET_URL)
         login(page, LOGIN_ID, LOGIN_PASSWORD)
         page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(3000)
+        page.wait_for_timeout(1000)
         print("[OK] 로그인 완료")
 
         # 3. 날짜별 스크래핑
@@ -86,34 +86,30 @@ def main():
             print(f"\n  [{idx}/{len(TARGET_DAYS)}] {reservation_date} 조회 중...")
 
             click_date_button(page)
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(500)
             click_calendar_date_january(page, str(day))
             page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(500)
 
-            if not has_reservations(page):
+            if not has_reservations(page, timeout=3000):
                 print(f"  [{idx}/{len(TARGET_DAYS)}] {reservation_date}: 예약 없음")
                 continue
 
             click_reservation_text(page)
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(500)
 
             team_count = get_team_count(page)
             scraped_data = []
             for team_idx in range(team_count):
                 click_team_button(page, team_idx)
-                page.wait_for_timeout(2000)
+                page.wait_for_timeout(500)
                 team_data = scrape_details(page, reservation_date, team_idx)
                 scraped_data.extend(team_data)
                 click_team_button(page, team_idx)
-                page.wait_for_timeout(1000)
+                page.wait_for_timeout(500)
 
             all_scraped_data.extend(scraped_data)
             print(f"  [{idx}/{len(TARGET_DAYS)}] {reservation_date}: {len(scraped_data)}건 수집 ({team_count}팀)")
-
-            page.goto(TARGET_URL)
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(2000)
 
         print(f"\n[4/4] 전체 스크래핑 완료 (총 {len(all_scraped_data)}건)")
 
