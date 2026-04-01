@@ -4,9 +4,11 @@ import calendar
 
 # 한국 시간대 (UTC+9)
 KST = timezone(timedelta(hours=9))
+import os
 from browser_controller import setup_browser
 from scraper import (
     login,
+    close_login_dialog,
     click_date_button,
     click_calendar_date,
     has_reservations,
@@ -15,6 +17,9 @@ from scraper import (
     get_team_count,
     scrape_details
 )
+
+SCREENSHOT_DIR = os.path.join(os.path.dirname(__file__), "debug_screenshots")
+os.makedirs(SCREENSHOT_DIR, exist_ok=True)
 from gsheets_client import save_to_sheet
 from slack_notifier import SlackNotifier
 from config import TARGET_URL, LOGIN_ID, LOGIN_PASSWORD, GOOGLE_SHEETS_URL
@@ -70,8 +75,11 @@ def main():
         # 2. 타겟 URL로 이동 및 로그인
         print("\n[2/6] 로그인 중...")
         page.goto(TARGET_URL)
+        page.wait_for_timeout(2000)
+        close_login_dialog(page)
         login(page, LOGIN_ID, LOGIN_PASSWORD)
         page.wait_for_timeout(3000)
+        page.screenshot(path=os.path.join(SCREENSHOT_DIR, "01_after_login.png"))
         print("[OK] 로그인 완료")
 
         # 3. 각 날짜별 스크래핑
@@ -85,6 +93,10 @@ def main():
             page.wait_for_timeout(1000)
             click_calendar_date(page, target_day)
             page.wait_for_timeout(2000)
+
+            # 첫 3일간 날짜 선택 후 스크린샷
+            if idx <= 3:
+                page.screenshot(path=os.path.join(SCREENSHOT_DIR, f"02_date_{reservation_date}.png"))
 
             # 예약 내역 확인
             if not has_reservations(page, timeout=5000):
@@ -101,6 +113,11 @@ def main():
             for team_idx in range(team_count):
                 click_team_button(page, team_idx)
                 page.wait_for_timeout(2000)
+
+                # 첫 3일간 팀 펼친 후 스크린샷
+                if idx <= 3:
+                    page.screenshot(path=os.path.join(SCREENSHOT_DIR, f"03_team_{reservation_date}_t{team_idx}.png"))
+
                 team_data = scrape_details(page, reservation_date, team_idx)
                 scraped_data.extend(team_data)
                 # 다음 팀 조회를 위해 현재 팀 접기
