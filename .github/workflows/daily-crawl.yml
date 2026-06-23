@@ -5,6 +5,11 @@ on:
     # KST 07:00 = UTC 22:00 (전날)
     - cron: '0 22 * * *'
   workflow_dispatch:  # 수동 실행 가능
+    inputs:
+      start_day:
+        description: '크롤링 시작일 (예: 1 → 1일부터 말일까지. 비우면 오늘부터)'
+        required: false
+        default: ''
 
 jobs:
   crawl:
@@ -36,6 +41,7 @@ jobs:
       - name: Run crawler
         env:
           HEADLESS: "true"
+          START_DAY: ${{ github.event.inputs.start_day }}
           LOGIN_ID: ${{ secrets.LOGIN_ID }}
           LOGIN_PASSWORD: ${{ secrets.LOGIN_PASSWORD }}
           TARGET_URL: ${{ secrets.TARGET_URL }}

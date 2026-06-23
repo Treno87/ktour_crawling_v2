@@ -11,6 +11,7 @@ from scraper import (
     close_login_dialog,
     click_date_button,
     click_calendar_date,
+    ensure_calendar_on_month,
     has_reservations,
     click_reservation_text,
     click_team_button,
@@ -39,7 +40,12 @@ def get_date_range_for_month(today=None) -> list[str]:
     if today is None:
         today = datetime.now(KST)
     last_day = calendar.monthrange(today.year, today.month)[1]
-    return [str(day) for day in range(today.day, last_day + 1)]
+    # 수동 실행 시 START_DAY 환경변수로 시작일을 덮어쓸 수 있음 (비어있으면 오늘부터)
+    start_day = today.day
+    override = os.environ.get("START_DAY", "").strip()
+    if override:
+        start_day = int(override)
+    return [str(day) for day in range(start_day, last_day + 1)]
 
 
 def main():
@@ -88,9 +94,10 @@ def main():
             reservation_date = format_date(today.year, today.month, int(target_day))
             print(f"\n  [{idx}/{len(target_days)}] {reservation_date} 조회 중...")
 
-            # 날짜 선택
+            # 날짜 선택 (달력을 목표 월로 강제하여 라벨 오류 방지)
             click_date_button(page)
             page.wait_for_timeout(1000)
+            ensure_calendar_on_month(page, today.year, today.month)
             click_calendar_date(page, target_day)
             page.wait_for_timeout(2000)
 
