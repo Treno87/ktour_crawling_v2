@@ -1,9 +1,31 @@
 from datetime import datetime
 from playwright.sync_api import Page
+import calendar as _calendar
 import time
 import json
 import re
 from config import PRICE_FILE
+
+_MONTH_NAME_TO_NUM = {name: num for num, name in enumerate(_calendar.month_name) if name}
+
+
+def calendar_month_label(year: int, month: int) -> str:
+    """달력 헤더에 표시되는 영문 라벨을 만든다. 예: (2026, 6) -> 'June 2026'"""
+    return f"{_calendar.month_name[month]} {year}"
+
+
+def parse_calendar_header(header: str) -> tuple[int, int] | None:
+    """
+    달력 헤더 텍스트를 (year, month)로 파싱한다. 예: 'June 2026' -> (2026, 6)
+    파싱 불가 시 None을 반환한다.
+    """
+    parts = header.strip().split()
+    if len(parts) < 2:
+        return None
+    month_name, year_str = parts[0], parts[-1]
+    if month_name not in _MONTH_NAME_TO_NUM or not year_str.isdigit():
+        return None
+    return int(year_str), _MONTH_NAME_TO_NUM[month_name]
 
 
 def retry_action(action, max_retries: int = 3, delay: float = 1.0):
@@ -42,6 +64,38 @@ def click_date_button(page: Page):
 
     page.locator(date_button_selector).wait_for(state="visible", timeout=15000)
     page.locator(date_button_selector).click()
+
+
+def read_calendar_header(page: Page) -> str:
+    """달력에 현재 표시된 월 헤더 텍스트를 읽는다. 예: 'June 2026'"""
+    header_selector = "div.MuiPickersCalendarHeader-label"
+    return page.locator(header_selector).first.inner_text(timeout=5000).strip()
+
+
+def ensure_calendar_on_month(page: Page, year: int, month: int, max_steps: int = 24):
+    """
+    달력을 목표 연-월로 이동시킨다.
+    달력에 표시된 달과 코드가 의도한 달이 어긋나 엉뚱한 달의 날짜를 클릭하는
+    '날짜 라벨 오류'를 방지한다.
+    """
+    prev_selector = 'button[aria-label="Previous month"]'
+    next_selector = 'button[aria-label="Next month"]'
+    target = (year, month)
+
+    for _ in range(max_steps):
+        current = parse_calendar_header(read_calendar_header(page))
+        if current == target:
+            return
+        # 목표가 과거면 Previous, 미래면 Next (파싱 실패 시 일단 Previous)
+        if current is None or current > target:
+            page.locator(prev_selector).click()
+        else:
+            page.locator(next_selector).click()
+        page.wait_for_timeout(400)
+
+    raise RuntimeError(
+        f"달력을 {calendar_month_label(year, month)}로 이동하지 못했습니다."
+    )
 
 
 def click_calendar_date(page: Page, day: str):
