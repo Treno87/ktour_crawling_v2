@@ -1,5 +1,5 @@
 from datetime import datetime
-from playwright.sync_api import Page
+from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 import calendar as _calendar
 import time
 import json
@@ -165,6 +165,13 @@ def click_team_button(page: Page, index: int = 0):
 def login(page: Page, email: str, password: str):
     """
     제공된 이메일과 비밀번호로 로그인합니다.
+
+    로그인 성공 여부는 '로그인 폼(이메일 입력칸)이 사라졌는지'로 검증한다.
+    과거에는 button.MuiIconButton-edgeEnd 가 보이는지로 판정했으나, 이 아이콘은
+    로그인 페이지의 상단바에도 존재해 로그인 실패를 성공으로 오판했다.
+    그 결과 잘못된 비밀번호/UI 변경 시에도 예외 없이 통과해, 로그인 화면에서
+    헛돌며 '예약 0건'을 조용히 수집하고 워크플로는 success로 끝나는 문제가 있었다.
+    이제 로그인 실패 시 RuntimeError로 즉시 중단하여 워크플로가 빨갛게 실패하도록 한다.
     """
     login_icon_selector = 'button[aria-label="log in"]'
     page.locator(login_icon_selector).wait_for(state="visible", timeout=15000)
@@ -179,6 +186,17 @@ def login(page: Page, email: str, password: str):
 
     page.evaluate("document.querySelector('button[type=\"submit\"]').click()")
 
+    # 성공 검증 1: 로그인 폼(이메일 입력칸)이 사라져야 진짜 로그인된 것.
+    try:
+        page.locator(email_selector).wait_for(state="hidden", timeout=15000)
+    except PlaywrightTimeoutError:
+        raise RuntimeError(
+            "로그인 실패: 제출 후에도 로그인 폼이 그대로입니다. "
+            "비밀번호(LOGIN_PASSWORD secret)가 최신인지, 사이트 로그인 UI가 "
+            "바뀌지 않았는지 확인하세요."
+        )
+
+    # 성공 검증 2: 로그인 후 사용자 메뉴 버튼이 보이는지 추가 확인(보조 신호).
     user_menu_button_selector = "button.MuiIconButton-edgeEnd"
     page.locator(user_menu_button_selector).wait_for(state="visible", timeout=15000)
 
